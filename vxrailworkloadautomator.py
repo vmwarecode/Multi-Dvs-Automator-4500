@@ -252,7 +252,11 @@ class VxRaiWorkloadAutomator:
         #Else leave it upto Workflow Validation to verify
         if len(existing_dvs_specs) == 1:
             existing_dvs_spec = self.getSystemDvs(existing_dvs_specs, primary_datastore_info['type'])
-            del existing_dvs_spec['niocBandwidthAllocationSpecs']
+            # Latest 4.x cluster discovery is not returning niocBandwidthAllocationSpecs in dvs spec.
+            # so adding check before deleting the entry. It is not required for the domain/cluster
+            # API input preparation
+            if 'niocBandwidthAllocationSpecs' in existing_dvs_spec:
+                del existing_dvs_spec['niocBandwidthAllocationSpecs']
 
         dvs_selection_text = [{"name": "Create New DVS"}, {"name" : "Use Existing DVS"} ]
         dvs_index = 0
