@@ -63,9 +63,9 @@ class VxRaiWorkloadAutomator:
         if isExistingDvs:
             tempDvsSpec['vdsSpecs'].append(existingDvs)
         elif isPrimary and not isExistingDvs:
-            tempDvsSpec['vdsSpecs'].append(new_Dvs)
+            tempDvsSpec['vdsSpecs'] = new_Dvs
         elif not isPrimary and not isExistingDvs:
-            tempDvsSpec['vdsSpecs'].append(new_Dvs)
+            tempDvsSpec['vdsSpecs'] = new_Dvs
 
         tempDvsSpec['nsxClusterSpec'] = {
             "nsxTClusterSpec": {
@@ -258,6 +258,12 @@ class VxRaiWorkloadAutomator:
             if 'niocBandwidthAllocationSpecs' in existing_dvs_spec:
                 del existing_dvs_spec['niocBandwidthAllocationSpecs']
 
+        # Removing activeUplinks from dvsSpecs[portGroupSpecs] if it is null
+        for dvsSpec in existing_dvs_specs:
+            for pgSpec in dvsSpec['portGroupSpecs']:
+                if 'activeUplinks' in pgSpec and pgSpec['activeUplinks'] is None:
+                    del pgSpec['activeUplinks']
+
         dvs_selection_text = [{"name": "Create New DVS"}, {"name" : "Use Existing DVS"} ]
         dvs_index = 0
         dvs_helper_text = ''
@@ -267,7 +273,7 @@ class VxRaiWorkloadAutomator:
             dvs_helper_text = "Select the DVS option to proceed"
             dvs_index = self.let_user_pick(dvs_helper_text, dvs_selection_text)
 
-        new_dvs_spec = {}
+        new_dvs_spec = []
         vmNics = []
         if dvs_index == 0:
             self.utils.printGreen("Getting compatible vmnic information...")
@@ -290,8 +296,9 @@ class VxRaiWorkloadAutomator:
                 print(*three_line_separator, sep='\n')
                 new_vds_name = input("\033[1m Enter the New DVS name : \033[0m")
 
-                new_dvs_spec["name"] = new_vds_name
-                new_dvs_spec["isUsedByNsxt"] = True
+                new_dvs_spec.append({'name': new_vds_name, 'isUsedByNsxt': True})
+                for spec in existing_dvs_specs:
+                    new_dvs_spec.append(spec)
 
                 vmnic_maps = list(map(lambda x: {"name": x['name'], "speed": str(x['linkSpeedMB']) + 'MB',
                                                  "active": "Active" if x['isActive'] else "Inactive"},
